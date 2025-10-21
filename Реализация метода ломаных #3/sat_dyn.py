@@ -1,5 +1,8 @@
-# Новый минимальный строковый парсер таблиц (надёжно обходит странные заголовки/разделители)
-
+"""
+Метод ломаных (Пиявского–Шуберта) + классические одномерные методы (дихотомия, золотое сечение, Фибоначчи) для таблично заданных функций.
+Читает таблицы из текущей директории, строит линейную интерполяцию, выполняет поиск минимума и сохраняет результаты в `out/` (графики в `out/plots/`).
+Соответствует базовым правилам PEP 257 для docstring.
+"""
 import re, io, math
 from pathlib import Path
 import numpy as np
@@ -8,9 +11,9 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
-# Базовые директории: всё рядом со скриптом
+# Атоматизация директорий
 BASE = Path(__file__).resolve().parent
-IN_DIR = BASE                  # входные файлы рядом со скриптом
+IN_DIR = BASE                  # Предполагается, что скрипт и инпуты в одной директории
 OUT = BASE / "out"            # все результаты сюда
 PLOTS = OUT / "plots"         # графики сюда
 OUT.mkdir(parents=True, exist_ok=True)
@@ -20,6 +23,20 @@ PLOTS.mkdir(parents=True, exist_ok=True)
 _num_re = re.compile(r'^[\s+-]?(\d+([.,]\d+)?)([eE][+-]?\d+)?\s*$')
 
 def _read_table(path):
+    """
+    Читает табличную функцию из текстового/CSV файла и возвращает очищенные пары (x, y).
+
+    Args:
+        path (Path | str): путь к файлу с таблицей (разделитель `;` или `,`).
+
+    Returns:
+        pandas.DataFrame: столбцы `x`, `y` (float), отсортированные по `x` без дубликатов.
+
+    Notes:
+        * Если первый столбец распознаётся как дата/время, `x` переводится в секунды от первого значения.
+        * Если даты нет, `x` читается как число; при невозможности — используется индексация.
+        * В качестве `y` используется второй числовой столбец строки.
+    """
     with open(path, 'r', errors='ignore') as f:
         lines = f.read().splitlines()
     # выбор разделителя по первой подходящей строке
@@ -65,6 +82,17 @@ def _read_table(path):
     return df
 
 def make_interp_func(x, y):
+    """
+    Создаёт линейный интерполятор по табличным точкам и возвращает удобные границы.
+
+    Args:
+        x (array-like): узлы по оси X.
+        y (array-like): значения функции в узлах.
+
+    Returns:
+        tuple: `(f, a, b, x_sorted, y_sorted)`, где `f(t)` — интерполирующая функция,
+        `a = min(x)`, `b = max(x)`, а также отсортированные массивы `x_sorted`, `y_sorted` без дубликатов по X.
+    """
     x = np.asarray(x, float); y = np.asarray(y, float)
     idx = np.argsort(x); x = x[idx]; y = y[idx]
     x, uniq_idx = np.unique(x, return_index=True); y = y[uniq_idx]
@@ -73,11 +101,34 @@ def make_interp_func(x, y):
     return f, a, b, x, y
 
 def estimate_L(x, y, r=1.3):
+    """
+    Оценка константы Липшица L по табличным данным.
+
+    Args:
+        x (array-like): узлы X.
+        y (array-like): значения Y.
+        r (float): коэффициент запаса к оценке (по умолчанию 1.3).
+
+    Returns:
+        float: `L = r * max |Δy/Δx|`.
+    """
     dx = np.diff(x); dy = np.abs(np.diff(y))
     m = float(np.max(dy / np.maximum(dx, 1e-12))) if len(dx) else 1.0
     return r*m if m>0 else 1.0
 
 def plot_broken_lines(f, a, b, L, xs, fs, tag="plot"):
+    """
+    Строит интерполированную `f(x)` и нижнюю оценку `g(x; x_i)` для узлов метода ломаных и сохраняет PNG.
+
+    Args:
+        f (callable): интерполирующая функция.
+        a (float): левая граница интервала.
+        b (float): правая граница интервала.
+        L (float): оценка Липшица.
+        xs (array-like): текущие узлы метода ломаных.
+        fs (array-like): значения `f` в узлах `xs`.
+        tag (str): суффикс имени файла графика.
+    """
     grid = np.linspace(a, b, 800)
     fg = f(grid)
     G = np.max(fs.reshape(-1,1) - L*np.abs(grid.reshape(1,-1) - xs.reshape(-1,1)), axis=0)
@@ -91,6 +142,22 @@ def plot_broken_lines(f, a, b, L, xs, fs, tag="plot"):
     plt.savefig(PLOTS / f"{tag}.png", dpi=150); plt.close()
 
 def broken_lines_minimize(f, a, b, L, iters=25, plot_every=(1,5,10,20,25), tag="f"):
+    """
+    Метод ломаных (Пиявского–Шуберта) для глобального поиска минимума на отрезке при известной оценке Липшица.
+
+    Args:
+        f (callable): целевая функция (интерполяция по таблице).
+        a (float): левая граница.
+        b (float): правая граница.
+        L (float): оценка константы Липшица.
+        iters (int): число итераций.
+        plot_every (tuple[int]): номера итераций, на которых рисовать графики.
+        tag (str): базовый тег для имён файлов.
+
+    Returns:
+        dict: `{"x", "f", "evals", "xs", "fs", "hist"}` — точка минимума, значение,
+        число вызовов `f`, финальные узлы и краткая история итераций.
+    """
     xs = [a, b]; fs = [f(a), f(b)]; evals = 2
     order = np.argsort(xs); xs = [xs[i] for i in order]; fs = [fs[i] for i in order]
     hist = []
@@ -111,6 +178,19 @@ def broken_lines_minimize(f, a, b, L, iters=25, plot_every=(1,5,10,20,25), tag="
     return {"x": float(xs[best_idx]), "f": float(fs[best_idx]), "evals": evals, "xs": np.array(xs), "fs": np.array(fs), "hist": hist}
 
 def dichotomy(f, a, b, eps=1e-3, delta=1e-5):
+    """
+    Метод дихотомии для унимодальной минимизации на [a, b].
+
+    Args:
+        f (callable): целевая функция.
+        a (float): левая граница.
+        b (float): правая граница.
+        eps (float): требуемая точность по длине интервала.
+        delta (float): половина смещения от середины при сравнении.
+
+    Returns:
+        tuple: `(xm, f(xm), evals)` — приблизительный минимум, значение и число вызовов `f`.
+    """
     evals = 0
     while b - a > eps:
         m = 0.5*(a+b); x1, x2 = m - delta, m + delta
@@ -121,6 +201,18 @@ def dichotomy(f, a, b, eps=1e-3, delta=1e-5):
     return xm, float(f(xm)), evals
 
 def golden(f, a, b, eps=1e-3):
+    """
+    Метод золотого сечения для унимодальной минимизации на [a, b].
+
+    Args:
+        f (callable): целевая функция.
+        a (float): левая граница.
+        b (float): правая граница.
+        eps (float): требуемая точность.
+
+    Returns:
+        tuple: `(xm, f(xm), evals)`.
+    """
     gr = (math.sqrt(5) - 1)/2
     x1 = b - gr*(b-a); x2 = a + gr*(b-a)
     f1, f2 = f(x1), f(x2); evals = 2
@@ -135,6 +227,18 @@ def golden(f, a, b, eps=1e-3):
     return xm, float(f(xm)), evals
 
 def fibonacci_search(f, a, b, eps=1e-3):
+    """
+    Метод поиска по Фибоначчи для унимодальной минимизации на [a, b].
+
+    Args:
+        f (callable): целевая функция.
+        a (float): левая граница.
+        b (float): правая граница.
+        eps (float): требуемая точность.
+
+    Returns:
+        tuple: `(xm, f(xm), evals)`.
+    """
     F = [1, 1]
     while F[-1] < (b - a)/eps:
         F.append(F[-1] + F[-2])
