@@ -1,0 +1,344 @@
+\documentclass[12pt,a4paper]{article}
+\usepackage[T2A]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[russian]{babel}
+\usepackage{geometry}
+\geometry{margin=2.5cm}
+\usepackage{amsmath}
+\usepackage{graphicx, amsmath, amssymb, hyperref, placeins, cite}
+\usepackage{float}
+\hypersetup{hidelinks}
+\usepackage{indentfirst}
+\usepackage{array}
+\usepackage{booktabs}
+
+\begin{document}
+
+\begin{center}
+    \textbf{Отчёт по лабораторной работе}\\[0.5em]
+    \textbf{Метод градиентного спуска}
+\end{center}
+
+\section{Постановка задачи}
+
+В работе реализуется метод градиентного спуска для минимизации следующих функций:
+\begin{align*}
+    J_1(x, y) &= x^2 + y^2,\\
+    J_2(x, y) &= \frac{x^2}{a^2} + \frac{y^2}{b^2},\\
+    J_3(x, y) &= 70 (x-1)^2 + (y-1)^2 + 1,\\
+    J_4(x, y) &= (x-8)^2 + (y-1)^2 + 70 \bigl(y + (x-8)^2 - 1\bigr)^2 + 1,
+\end{align*}
+где параметры $a, b$ задают большую и малую полуоси эллипса во второй функции.
+
+Метод градиентного спуска настраивается по:
+\begin{itemize}
+    \item начальной точке $x_0 = (x_0, y_0)$;
+    \item режиму выбора шага $h_k$;
+    \item значению шага $h$ (или параметрам $c, \alpha$ для убывающих шагов);
+    \item критерию остановки: по числу итераций, по норме разности векторов $\|x_{k+1} - x_k\|$, по изменению функционала $|J(x_{k+1}) - J(x_k)|$.
+\end{itemize}
+
+\section{Описание метода}
+
+На $k$-й итерации метода градиентного спуска вычисляется шаг
+\[
+    x_{k+1} = x_k - h_k \nabla J(x_k),
+\]
+где $h_k$ выбирается в одном из следующих режимов:
+\begin{itemize}
+    \item постоянный шаг: $h_k = h$;
+    \item убывающий шаг вида
+    \[
+        h_k = c (1 + k)^{-\alpha}, \quad c > 0,\; 0.5 < \alpha \leq 1;
+    \]
+    \item шаг вида
+    \[
+        h_k = \frac{c}{k+1}, \quad c > 0,
+    \]
+    удовлетворяющий условиям
+    \[
+        h_k > 0,\quad \sum_{k=0}^{\infty} h_k = \infty,\quad
+        \sum_{k=0}^{\infty} h_k^2 < \infty.
+    \]
+\end{itemize}
+
+Критерии остановки:
+\begin{itemize}
+    \item ограничение сверху на число итераций $k_{\max}$;
+    \item достижение малой нормы приращения аргумента:
+    \[
+        \|x_{k+1} - x_k\| < \varepsilon_x;
+    \]
+    \item достижение малой разности значений функционала:
+    \[
+        |J(x_{k+1}) - J(x_k)| < \varepsilon_f.
+    \]
+\end{itemize}
+
+В реализованном коде используются значения
+\[
+    \varepsilon_x = 10^{-6}, \quad \varepsilon_f = 10^{-6},
+\]
+а максимальное число итераций выбирается равным $k_{\max} = 20000$.
+
+\section{Численные эксперименты}
+
+Для каждой функции рассматриваются два режима шага:
+\begin{itemize}
+    \item постоянный шаг ($h_k = h$);
+    \item убывающий шаг вида $h_k = c (1 + k)^{-\alpha}$.
+\end{itemize}
+Отдельно демонстрируется режим $h_k = c/(k+1)$ на функции $J_1$.
+
+Начальные точки и значения шагов:
+
+В численных экспериментах для функции $J_2$ использовались значения
+$a = 5$, $b = 1$, что соответствует вытянутому эллипсу уровней вдоль оси $x$.
+\begin{itemize}
+    \item $J_1$: $x_0 = (5, 5)$, постоянный шаг $h = 0.2$, убывающий шаг $h_k = 0.5 (1 + k)^{-0.6}$;
+    \item $J_2$: $x_0 = (5, 3)$, постоянный шаг $h = 0.2$, убывающий шаг $h_k = 0.5 (1 + k)^{-0.6}$;
+    \item $J_3$: $x_0 = (-5, 5)$, постоянный шаг $h = 0.01$, убывающий шаг $h_k = 0.5 (1 + k)^{-0.9}$;
+    \item $J_4$: $x_0 = (8, 3)$, постоянный шаг $h = 0.001$, убывающий шаг $h_k = 0.05 (1 + k)^{-0.9}$;
+    \item демонстрация шага $h_k = \dfrac{0.5}{k+1}$ для $J_1$.
+\end{itemize}
+
+\subsection{Функция $J_1(x, y) = x^2 + y^2$}
+
+\subsubsection*{Траектории на плоскости}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.7\textwidth]{f1_traj_constant.png}
+    \caption{Траектория градиентного спуска для $J_1$ при постоянном шаге
+    (файл \texttt{f1\_traj\_constant.png}).}
+    \label{fig:f1_traj_constant}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.7\textwidth]{f1_traj_power.png}
+    \caption{Траектория градиентного спуска для $J_1$ при убывающем шаге
+    $h_k = 0.5 (1 + k)^{-0.6}$ (файл \texttt{f1\_traj\_power.png}).}
+    \label{fig:f1_traj_power}
+\end{figure}
+
+Если используется демонстрация режима $h_k = 0.5/(k+1)$, то соответствующий график траектории:
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.7\textwidth]{f1_traj_1_over_k.png}
+    \caption{Траектория градиентного спуска для $J_1$ при шаге
+    $h_k = 0.5/(k+1)$ (файл \texttt{f1\_traj\_1\_over\_k.png}).}
+    \label{fig:f1_traj_1_over_k}
+\end{figure}
+
+\subsubsection*{Убывание значения функционала $J_1(x_k)$}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.7\textwidth]{f1_J_constant.png}
+    \caption{График убывания $J_1(x_k)$ при постоянном шаге
+    (файл \texttt{f1\_J\_constant.png}).}
+    \label{fig:f1_J_constant}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.7\textwidth]{f1_J_power.png}
+    \caption{График убывания $J_1(x_k)$ при убывающем шаге
+    $h_k = 0.5 (1 + k)^{-0.6}$ (файл \texttt{f1\_J\_power.png}).}
+    \label{fig:f1_J_power}
+\end{figure}
+
+При необходимости:
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.7\textwidth]{f1_J_1_over_k.png}
+    \caption{График убывания $J_1(x_k)$ при шаге
+    $h_k = 0.5/(k+1)$ (файл \texttt{f1\_J\_1\_over\_k.png}).}
+    \label{fig:f1_J_1_over_k}
+\end{figure}
+
+\subsection{Функция $J_2(x, y) = \dfrac{x^2}{a^2} + \dfrac{y^2}{b^2}$}
+
+\subsubsection*{Траектории на плоскости}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.7\textwidth]{f2_traj_constant.png}
+    \caption{Траектория градиентного спуска для $J_2$ при постоянном шаге
+    (файл \texttt{f2\_traj\_constant.png}).}
+    \label{fig:f2_traj_constant}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.7\textwidth]{f2_traj_power.png}
+    \caption{Траектория градиентного спуска для $J_2$ при убывающем шаге
+    $h_k = 0.5 (1 + k)^{-0.6}$ (файл \texttt{f2\_traj\_power.png}).}
+    \label{fig:f2_traj_power}
+\end{figure}
+
+\subsubsection*{Убывание $J_2(x_k)$}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.7\textwidth]{f2_J_constant.png}
+    \caption{График убывания $J_2(x_k)$ при постоянном шаге
+    (файл \texttt{f2\_J\_constant.png}).}
+    \label{fig:f2_J_constant}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.7\textwidth]{f2_J_power.png}
+    \caption{График убывания $J_2(x_k)$ при убывающем шаге
+    (файл \texttt{f2\_J\_power.png}).}
+    \label{fig:f2_J_power}
+\end{figure}
+
+\subsection{Функция $J_3(x, y) = 70 (x-1)^2 + (y-1)^2 + 1$}
+
+\subsubsection*{Траектории на плоскости}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.7\textwidth]{f3_traj_constant.png}
+    \caption{Траектория градиентного спуска для $J_3$ при постоянном шаге
+    (файл \texttt{f3\_traj\_constant.png}).}
+    \label{fig:f3_traj_constant}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.7\textwidth]{f3_traj_power.png}
+    \caption{Траектория градиентного спуска для $J_3$ при убывающем шаге
+    $h_k = 0.5 (1 + k)^{-0.9}$ (файл \texttt{f3\_traj\_power.png}).}
+    \label{fig:f3_traj_power}
+\end{figure}
+
+\subsubsection*{Убывание $J_3(x_k)$}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.7\textwidth]{f3_J_constant.png}
+    \caption{График убывания $J_3(x_k)$ при постоянном шаге
+    (файл \texttt{f3\_J\_constant.png}).}
+    \label{fig:f3_J_constant}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.7\textwidth]{f3_J_power.png}
+    \caption{График убывания $J_3(x_k)$ при убывающем шаге
+    (файл \texttt{f3\_J\_power.png}).}
+    \label{fig:f3_J_power}
+\end{figure}
+
+\subsection{Функция $J_4(x, y)$}
+
+\subsubsection*{Траектории на плоскости}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.7\textwidth]{f4_traj_constant.png}
+    \caption{Траектория градиентного спуска для $J_4$ при постоянном шаге
+    (файл \texttt{f4\_traj\_constant.png}).}
+    \label{fig:f4_traj_constant}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.7\textwidth]{f4_traj_power.png}
+    \caption{Траектория градиентного спуска для $J_4$ при убывающем шаге
+    $h_k = 0.05 (1 + k)^{-0.9}$ (файл \texttt{f4\_traj\_power.png}).}
+    \label{fig:f4_traj_power}
+\end{figure}
+
+\subsubsection*{Убывание $J_4(x_k)$}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.7\textwidth]{f4_J_constant.png}
+    \caption{График убывания $J_4(x_k)$ при постоянном шаге
+    (файл \texttt{f4\_J\_constant.png}).}
+    \label{fig:f4_J_constant}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.7\textwidth]{f4_J_power.png}
+    \caption{График убывания $J_4(x_k)$ при убывающем шаге
+    (файл \texttt{f4\_J\_power.png}).}
+    \label{fig:f4_J_power}
+\end{figure}
+
+\section{Итоговые точки минимума}
+
+Результаты работы метода сведены в таблицу
+
+% \begin{table}[H]
+%     \centering
+%     \begin{tabular}{|c|c|c|c|c|}
+%         \hline
+%         Функция & Режим шага & Найденная точка $x^\ast$ & $J(x^\ast)$ & Критерий остановки \\
+%         \hline
+%         $J_1$ & постоянный    & $(\ldots,\ \ldots)$ & $\ldots$ & $\ldots$ \\
+%         $J_1$ & убывающий     & $(\ldots,\ \ldots)$ & $\ldots$ & $\ldots$ \\
+%         $J_1$ & $h_k = 0.5/(k+1)$ & $(\ldots,\ \ldots)$ & $\ldots$ & $\ldots$ \\
+%         $J_2$ & постоянный    & $(\ldots,\ \ldots)$ & $\ldots$ & $\ldots$ \\
+%         $J_2$ & убывающий     & $(\ldots,\ \ldots)$ & $\ldots$ & $\ldots$ \\
+%         $J_3$ & постоянный    & $(\ldots,\ \ldots)$ & $\ldots$ & $\ldots$ \\
+%         $J_3$ & убывающий     & $(\ldots,\ \ldots)$ & $\ldots$ & $\ldots$ \\
+%         $J_4$ & постоянный    & $(\ldots,\ \ldots)$ & $\ldots$ & $\ldots$ \\
+%         $J_4$ & убывающий     & $(\ldots,\ \ldots)$ & $\ldots$ & $\ldots$ \\
+%         \hline
+%     \end{tabular}
+%     \caption{Итоговые точки минимума и значения функционала для разных режимов шага.}
+%     \label{tab:results_summary}
+% \end{table}
+\input{gd_results_table.tex}
+
+\section{Выводы}
+
+По результатам численных экспериментов можно сделать следующие выводы.
+
+\begin{enumerate}
+    \item Для всех рассмотренных функций $J_1$--$J_4$ метод градиентного спуска
+    сходится к аналитически известным точкам минимума:
+    $J_1$ и $J_2$~--- к точке $(0, 0)$, $J_3$~--- к точке $(1, 1)$,
+    $J_4$~--- к точке $(8, 1)$. Численные значения $x^\ast$ и $J(x^\ast)$,
+    приведённые в таблице~\ref{tab:results_summary}, совпадают с теоретическими
+    с погрешностью порядка $10^{-3}$--$10^{-6}$.
+    
+    \item На хорошо обусловленной квадратичной функции $J_1$ постоянный шаг и
+    убывающий шаг демонстрируют быструю и стабильную сходимость. При разумном
+    выборе $h$ постоянный шаг обеспечивает почти геометрическое убывание $J(x_k)$.
+    Шаг вида $h_k = c(1+k)^{-\alpha}$ даёт более плавную, но гарантированно
+    устойчивую сходимость.
+    
+    \item Для вытянутой квадратичной функции $J_2$ влияние обусловленности
+    заметно сильнее: траектория с постоянным шагом существенно искривлена,
+    и сходится медленнее вдоль “длинной” оси эллипса. Переход к убывающему шагу
+    частично сглаживает колебания и делает поведение метода более устойчивым,
+    хотя скорость сходимости на начальных итерациях снижается.
+    
+    \item Для функции $J_3$ с сильно различающимися коэффициентами по $x$ и $y$
+    (жёсткое направление по $x$) требуются малые значения постоянного шага,
+    иначе возникает риск расходимости. Убывающий шаг позволяет выбрать более
+    агрессивное начальное значение и при этом гарантировать сходимость за счёт
+    постепенного уменьшения $h_k$.
+    
+    \item Для нелинейной функции $J_4$ с узкой искривлённой долиной градиентный
+    спуск чувствителен к выбору шага: слишком большие значения $h$ приводят к
+    “прыжкам” поперёк долины и замедлению сходимости. Правильно подобранный
+    постоянный шаг и убывающий шаг обеспечивают движение вдоль долины к минимуму,
+    что видно на траекториях и графиках убывания $J(x_k)$.
+    
+    \item Шаг вида $h_k = \dfrac{c}{k+1}$ на примере функции $J_1$ демонстрирует
+    теоретически корректное поведение: условия $\sum h_k = \infty$ и
+    $\sum h_k^2 < \infty$ выполняются, метод сходится к минимуму, однако убывание
+    значения функционала происходит медленнее, чем при оптимально подобранном
+    постоянном шаге.
+\end{enumerate}
+
+\end{document}
