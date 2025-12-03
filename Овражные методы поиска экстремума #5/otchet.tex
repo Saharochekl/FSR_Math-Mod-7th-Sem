@@ -1,0 +1,272 @@
+\documentclass[12pt,a4paper]{article}
+\usepackage[T2A]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[russian]{babel}
+\usepackage{geometry}
+\geometry{margin=2.5cm}
+\usepackage{amsmath}
+\usepackage{graphicx, amsmath, amssymb, hyperref, placeins, cite}
+\usepackage{float}
+\hypersetup{hidelinks}
+\usepackage{indentfirst}
+\usepackage{array}
+\usepackage{booktabs}
+
+\begin{document}
+
+\begin{center}
+    \textbf{Отчёт по лабораторной работе}\\[0.5em]
+    \textbf{Метод градиентного спуска}
+\end{center}
+
+\section{Постановка задачи}
+
+\section{Постановка задачи}
+
+Рассматривается модификация метода градиентного спуска, называемая овражным
+методом, для минимизации функций
+\begin{align*}
+    J_1(x, y) &= x^2 + \alpha y^2,\quad \alpha \gg 1,\\
+    J_2(x, y) &= \frac{x^2}{a^2} + \frac{y^2}{b^2},\quad a \gg b,\\
+    J_3(x, y) &= 70 (x-1)^2 + (y-1)^2 + 1,\\
+    J_4(x, y) &= (x-8)^2 + (y-1)^2 + 70 \bigl(y + (x-8)^2 - 1\bigr)^2 + 1,\\
+    J_5(x, y) &= (x-8)^2 + (y-1)^2 + 70(x+y-9)^2 + 1.
+\end{align*}
+
+В численных экспериментах использовались значения $\alpha = 10$,
+$a = 10$, $b = 1$, что соответствует сильно вытянутым линиям уровня
+в задачах $J_1$ и $J_2$.
+
+\section{Описание овражного метода}
+
+Пусть задана два начальные точки $v_0$ и $v_1$ на плоскости. Из каждой
+из них выполняется один шаг метода градиентного спуска с шагом
+$h_{\text{gd}} > 0$:
+\[
+    x_0 = v_0 - h_{\text{gd}} \nabla J(v_0), \qquad
+    x_1 = v_1 - h_{\text{gd}} \nabla J(v_1).
+\]
+
+Далее для $k \ge 1$ предполагается, что найдены точки
+$x_{k-1}$ и $x_k$. Строится вспомогательная точка
+\[
+    v_k = x_k - \frac{x_k - x_{k-1}}{\|x_k - x_{k-1}\|}
+    \, h \, \operatorname{sign}\bigl(J(x_k) - J(x_{k-1})\bigr),
+\]
+где $h > 0$~--- параметр овражного шага.
+Затем из точки $v_k$ выполняется один шаг градиентного спуска:
+\[
+    x_{k+1} = v_k - h_{\text{gd}} \nabla J(v_k).
+\]
+
+Последовательность $\{x_k\}$ строится до выполнения одного из критериев
+остановки:
+\begin{itemize}
+    \item ограничение на число итераций $k_{\max}$;
+    \item малое изменение аргумента:
+    \[
+        \|x_{k+1} - x_k\| < \varepsilon_x;
+    \]
+    \item малое изменение функционала:
+    \[
+        |J(x_{k+1}) - J(x_k)| < \varepsilon_f.
+    \]
+\end{itemize}
+
+В реализованном коде использовались значения
+$\varepsilon_x = 10^{-6}$, $\varepsilon_f = 10^{-6}$,
+$k_{\max} = 20000$.
+
+\section{Численные эксперименты}
+
+Для каждой из функций $J_1$--$J_5$ выбирались начальные точки $v_0$, $v_1$
+и параметры шага $h_{\text{gd}}$ и $h$:
+
+\begin{itemize}
+    \item $J_1$: $v_0 = (5, 5)$, $v_1 = (4, 5)$,
+    $h_{\text{gd}} = 0.05$, $h = 0.5$;
+    \item $J_2$: $v_0 = (5, 3)$, $v_1 = (5, 4)$,
+    $h_{\text{gd}} = 0.05$, $h = 0.5$;
+    \item $J_3$: $v_0 = (-5, 5)$, $v_1 = (-4, 5)$,
+    $h_{\text{gd}} = 0.01$, $h = 0.2$;
+    \item $J_4$: $v_0 = (8, 3)$, $v_1 = (7, 3)$,
+    $h_{\text{gd}} = 0.001$, $h = 0.1$;
+    \item $J_5$: $v_0 = (8, 3)$, $v_1 = (9, 2)$,
+    $h_{\text{gd}} = 0.005$, $h = 0.1$.
+\end{itemize}
+
+
+\subsection{Функция $J_1(x, y) = x^2 + 10 y^2$}
+
+\subsubsection*{Траектория на плоскости}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.7\textwidth]{j1_traj_ravine.png}
+    \caption{Траектория овражного метода для $J_1$
+    (файл \texttt{j1\_traj\_ravine.png}).}
+    \label{fig:j1_traj_ravine}
+\end{figure}
+
+\subsubsection*{Убывание значения функционала $J_1(x_k)$}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.7\textwidth]{j1_J_ravine.png}
+    \caption{График убывания $J_1(x_k)$ при использовании овражного метода
+    (файл \texttt{j1\_J\_ravine.png}).}
+    \label{fig:j1_J_ravine}
+\end{figure}
+
+\subsection{Функция $J_2(x, y) = \frac{{x^2}}{{{10}^2}} + \frac{{y^2}}{{{1}^2}}$}
+
+\subsubsection*{Траектории на плоскости}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.7\textwidth]{j2_traj_ravine.png}
+    \caption{Траектория овражного метода для $J_2$
+    (файл \texttt{j2\_traj\_ravine.png}).}
+    \label{fig:j2_traj_ravine}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.7\textwidth]{j2_J_ravine.png}
+    \caption{График убывания $J_2(x_k)$ при использовании овражного метода
+    (файл \texttt{j2\_J\_ravine.png}).}
+    \label{fig:j2_J_ravine}
+\end{figure}
+
+\subsection{Функция $J_3(x, y) = 70(x-1)^2 + (y-1)^2 + 1$}
+
+\subsubsection*{Траектории на плоскости}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.7\textwidth]{j3_traj_ravine.png}
+    \caption{Траектория овражного метода для $J_3$
+    (файл \texttt{j3\_traj\_ravine.png}).}
+    \label{fig:j3_traj_ravine}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.7\textwidth]{j3_J_ravine.png}
+    \caption{График убывания $J_3(x_k)$ при использовании овражного метода
+    (файл \texttt{j3\_J\_ravine.png}).}
+    \label{fig:j3_J_ravine}
+\end{figure}
+
+\subsection{Функция $J_4(x, y) = (x-8)^2 + (y-1)^2 + 70(y+(x-8)^2-1)^2 + 1$}
+
+\subsubsection*{Траектории на плоскости}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.7\textwidth]{j4_traj_ravine.png}
+    \caption{Траектория овражного метода для $J_4$
+    (файл \texttt{j4\_traj\_ravine.png}).}
+    \label{fig:j4_traj_ravine}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.7\textwidth]{j4_J_ravine.png}
+    \caption{График убывания $J_4(x_k)$ при использовании овражного метода
+    (файл \texttt{j4\_J\_ravine.png}).}
+    \label{fig:j4_J_ravine}
+\end{figure}
+
+\subsection{Функция $J_5(x, y) = (x-8)^2 + (y-1)^2 + 70(x+y-9)^2 + 1$}
+
+\subsubsection*{Траектории на плоскости}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.7\textwidth]{j5_traj_ravine.png}
+    \caption{Траектория овражного метода для $J_5$
+    (файл \texttt{j5\_traj\_ravine.png}).}
+    \label{fig:j5_traj_ravine}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.7\textwidth]{j5_J_ravine.png}
+    \caption{График убывания $J_5(x_k)$ при использовании овражного метода
+    (файл \texttt{j5\_J\_ravine.png}).}
+    \label{fig:j5_J_ravine}
+\end{figure}
+
+\section{Итоговые точки минимума}
+
+Результаты работы метода сведены в таблицу
+
+% \begin{table}[H]
+%     \centering
+%     \begin{tabular}{|c|c|c|c|c|}
+%         \hline
+%         Функция & Режим шага & Найденная точка $x^\ast$ & $J(x^\ast)$ & Критерий остановки \\
+%         \hline
+%         $J_1$ & постоянный    & $(\ldots,\ \ldots)$ & $\ldots$ & $\ldots$ \\
+%         $J_1$ & убывающий     & $(\ldots,\ \ldots)$ & $\ldots$ & $\ldots$ \\
+%         $J_1$ & $h_k = 0.5/(k+1)$ & $(\ldots,\ \ldots)$ & $\ldots$ & $\ldots$ \\
+%         $J_2$ & постоянный    & $(\ldots,\ \ldots)$ & $\ldots$ & $\ldots$ \\
+%         $J_2$ & убывающий     & $(\ldots,\ \ldots)$ & $\ldots$ & $\ldots$ \\
+%         $J_3$ & постоянный    & $(\ldots,\ \ldots)$ & $\ldots$ & $\ldots$ \\
+%         $J_3$ & убывающий     & $(\ldots,\ \ldots)$ & $\ldots$ & $\ldots$ \\
+%         $J_4$ & постоянный    & $(\ldots,\ \ldots)$ & $\ldots$ & $\ldots$ \\
+%         $J_4$ & убывающий     & $(\ldots,\ \ldots)$ & $\ldots$ & $\ldots$ \\
+%         \hline
+%     \end{tabular}
+%     \caption{Итоговые точки минимума и значения функционала для разных режимов шага.}
+%     \label{tab:results_summary}
+% \end{table}
+\input{ravine_results_table.tex}
+
+\section{Выводы}
+
+По результатам численных экспериментов с овражным методом можно сделать
+следующие выводы.
+
+\begin{enumerate}
+    \item Для всех рассмотренных функций $J_1$--$J_5$ овражный метод
+    сходится к ожидаемым точкам минимума: $(0,0)$ для $J_1$ и $J_2$,
+    $(1,1)$ для $J_3$, $(8,1)$ для $J_4$ и $(8,1)$ для $J_5$.
+    Численные значения $x^*$ и $J(x^*)$, приведённые в таблице,
+    совпадают с теоретическими значениями с погрешностью порядка
+    $10^{-3}$--$10^{-6}$.
+
+    \item На сильно вытянутых квадратичных функциях ($J_1$, $J_2$)
+    овражный шаг заметно уменьшает “зигзагообразное” движение, характерное
+    для обычного градиентного спуска: траектория становится более
+    направленной вдоль долины, а убывание $J(x_k)$ происходит более равномерно.
+    При этом слишком большие значения параметра $h$ приводят к переусилению
+    коррекции и могут ухудшить сходимость.
+
+    \item В задаче $J_3$ с резким различием кривизны по $x$ и $y$ овражный
+    метод позволяет использовать более агрессивный шаг градиентного
+    спуска $h_{\text{gd}}$, чем в чистом градиентном методе, оставаясь
+    при этом устойчивым. Овражный шаг частично компенсирует дрейф
+    поперёк узкой долины и ускоряет выход на окрестность минимума.
+
+    \item Для сильно нелинейной функции $J_4$ с узкой искривлённой долиной
+    овражный метод также уменьшает “перескакивание” через долину, однако
+    чувствителен к выбору параметров: при слишком большом $h$ возможны
+    колебания вдоль долины, при слишком малом эффект овражной коррекции почти
+    исчезает и метод приближается к обычному градиентному спуску.
+
+    \item В задаче $J_5$, где долина ориентирована вдоль наклонной прямой
+    $x + y = 9$, овражный метод эффективно учитывает изменение направления
+    долины по ходу итераций: траектория быстрее выстраивается вдоль линии
+    минимума, а число шагов до заданной точности уменьшается по сравнению
+    с “наивным” градиентным спуском.
+
+    \item В целом овражный метод можно рассматривать как простую и дешёвую
+    по вычислениям модификацию градиентного спуска, которая улучшает
+    поведение метода в сильно вытянутых и “овражных” задачах, при этом
+    требуя аккуратного подбора двух параметров: шага градиентного спуска
+    $h_{\text{gd}}$ и овражного шага $h$.
+\end{enumerate}
+
+\end{document}
