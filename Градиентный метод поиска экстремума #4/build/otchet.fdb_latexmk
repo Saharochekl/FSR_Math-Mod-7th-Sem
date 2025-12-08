@@ -1,6 +1,6 @@
 # Fdb version 4
-["pdflatex"] 1764740900.33956 "/Users/zuha/Desktop/FKI/4 курс 2025-2026/7 семестр/FSR_Math-Mod-7th-Sem/Градиентный метод поиска экстремума #4/otchet.tex" "build/otchet.pdf" "otchet" 1764740906.91328 2
-  "/Users/zuha/Desktop/FKI/4 курс 2025-2026/7 семестр/FSR_Math-Mod-7th-Sem/Градиентный метод поиска экстремума #4/otchet.tex" 1764740614.59996 14813 a2bde0fb92a485d487a9d1c0ff569722 ""
+["pdflatex"] 1765210741.72487 "/Users/zuha/Desktop/FKI/4 курс 2025-2026/7 семестр/FSR_Math-Mod-7th-Sem/Градиентный метод поиска экстремума #4/otchet.tex" "build/otchet.pdf" "otchet" 1765210748.17875 2
+  "/Users/zuha/Desktop/FKI/4 курс 2025-2026/7 семестр/FSR_Math-Mod-7th-Sem/Градиентный метод поиска экстремума #4/otchet.tex" 1765210741.37651 14813 a2bde0fb92a485d487a9d1c0ff569722 ""
   "/Users/zuha/Library/texlive/2025/texmf-var/fonts/tfm/lh/lh-t2a/labx1200.tfm" 1748385537.0196 3308 eee81981029f67083258db36df06e523 ""
   "/Users/zuha/Library/texlive/2025/texmf-var/fonts/tfm/lh/lh-t2a/labx1440.tfm" 1748383375.79491 3304 6a543c07045572737981351171e0505e ""
   "/Users/zuha/Library/texlive/2025/texmf-var/fonts/tfm/lh/lh-t2a/labx1728.tfm" 1748385540.11143 3312 d199be9bd555944e2403193d58a0256a ""
@@ -113,8 +113,8 @@
   "/usr/local/texlive/2025/texmf-var/fonts/map/pdftex/updmap/pdftex.map" 1748372261 5467155 19efa205003f9ecad95fbbaa6ff24da1 ""
   "/usr/local/texlive/2025/texmf-var/web2c/pdftex/pdflatex.fmt" 1748372131 3345732 aabcaff7470c5d83b70fd5840d3a83d5 ""
   "/usr/local/texlive/2025/texmf.cnf" 1741450484 577 418a7058ec8e006d8704f60ecd22c938 ""
-  "build/otchet.aux" 1764740906.79085 10035 ba49a0081444f6ab4e9514babf72c00e "pdflatex"
-  "build/otchet.out" 1764740906.79256 1967 dfcb248f2488d0e8f0bf092bfb098150 "pdflatex"
+  "build/otchet.aux" 1765210748.05403 10035 ba49a0081444f6ab4e9514babf72c00e "pdflatex"
+  "build/otchet.out" 1765210748.05554 1967 dfcb248f2488d0e8f0bf092bfb098150 "pdflatex"
   "f1_J_1_over_k.png" 1764732436.3475 98605 5de4ed955db7e5d205c988bf8ae8f631 ""
   "f1_J_constant.png" 1764732432.76134 89793 501b3e4d512fe18783e3c9384f84d76f ""
   "f1_J_power.png" 1764732433.21436 100001 ad4a4a9732485cf45fa76375bdf4260b ""
