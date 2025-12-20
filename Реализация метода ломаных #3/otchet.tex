@@ -1,0 +1,407 @@
+\documentclass[12pt,a4paper]{article}
+\usepackage[T2A]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[russian]{babel}
+\usepackage{amsmath, amssymb}
+\usepackage{geometry}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\usepackage{booktabs}
+
+\usepackage{float}
+\usepackage{subcaption}
+\graphicspath{{out/plots/}}
+
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+
+\geometry{margin=2.5cm}
+\hypersetup{hidelinks}
+
+\title{Глобальная минимизация таблично заданных функций:\\
+метод ломаных (Пиявского--Шуберта) и классические одномерные методы}
+\author{}
+\date{}
+
+\begin{document}
+\maketitle
+
+\section{Постановка задачи}
+
+Дана функция \(f\), заданная таблично наборами точек \(\{(x_i,y_i)\}_{i=1}^n\).
+Требуется найти приближение точки минимума
+\[
+x^\ast \in [a,b], \qquad f(x^\ast)=\min_{x\in[a,b]} f(x),
+\]
+где \([a,b]\) --- границы области определения, извлечённые из табличных \(x_i\).
+
+Поскольку исходные данные дискретны, в алгоритме строится \textbf{линейная интерполяция}
+\(\tilde f(x)\), и далее минимизируется именно \(\tilde f\) на \([a,b]\).
+
+\section{Предобработка табличных данных}
+
+Входные файлы (\texttt{.txt} или \texttt{.csv}) содержат минимум два столбца:
+\(\,x\) (первый столбец) и \(\,y\) (второй столбец).
+
+\subsection{Разбор формата и очистка}
+Алгоритм чтения данных:
+\begin{itemize}
+  \item выбирает разделитель \texttt{;} или \texttt{,} по первой подходящей строке;
+  \item берёт \(\,y\) из 2-го столбца только если он распознаётся как число;
+  \item пытается интерпретировать \(\,x\) как дату/время; если удаётся, переводит в секунды относительно первого времени;
+  \item иначе пытается интерпретировать \(\,x\) как число; если не получается --- использует индекс строки;
+  \item удаляет дубликаты по \(x\), сортирует по \(x\).
+\end{itemize}
+
+\subsection{Границы интервала}
+После сортировки:
+\[
+a=\min_i x_i,\qquad b=\max_i x_i.
+\]
+
+\section{Линейная интерполяция}
+
+Пусть \((x_1,y_1),\dots,(x_m,y_m)\) --- очищенные точки с \(x_1<\dots<x_m\).
+Определим \(\tilde f(x)\) как кусочно-линейную интерполяцию:
+для \(x\in[x_k,x_{k+1}]\)
+\[
+\tilde f(x)= y_k + \frac{y_{k+1}-y_k}{x_{k+1}-x_k}\,(x-x_k).
+\]
+Вне узлов интервалов \(\tilde f\) вычисляется стандартной операцией \texttt{interp}.
+
+\paragraph{Замечание.}
+После этого минимизируется не исходная (неизвестная) функция, а её аппроксимация \(\tilde f\).
+Если таблица редкая или шумная, положение минимума может смещаться.
+
+\section{Липшицевость и оценка константы}
+
+\subsection{Определение}
+Функция \(f\) называется липшицевой на \([a,b]\), если существует \(L>0\), такое что
+\[
+|f(x)-f(y)| \le L|x-y|,\qquad \forall x,y\in[a,b].
+\]
+\(L\) называют \textbf{константой Липшица}.
+
+\subsection{Оценка \(L\) по таблице}
+Для кусочно-линейной \(\tilde f\) достаточно оценить максимальный модуль наклона на отрезках:
+\[
+L_0=\max_{k=1,\dots,m-1}\left|\frac{y_{k+1}-y_k}{x_{k+1}-x_k}\right|.
+\]
+В реализации применяется запасной множитель \(r>1\):
+\[
+L = r\,L_0.
+\]
+Это делает метод устойчивее, если наклоны недооценены из-за дискретизации/шума.
+
+\section{Метод ломаных (Пиявского--Шуберта)}
+
+\subsection{Идея: нижняя оценка через конусы}
+Пусть \(f\) липшицева с константой \(L\). Тогда из неравенства Липшица:
+\[
+f(x)\ge f(x_i) - L|x-x_i| \quad \forall x.
+\]
+Для набора уже вычисленных точек \(x_i\) можно построить \textbf{глобальный минорант}:
+\[
+g(x)=\max_i\Bigl(f(x_i)-L|x-x_i|\Bigr),
+\]
+который удовлетворяет \(g(x)\le f(x)\) для всех \(x\).
+График \(g\) представляет собой верхнюю огибающую ``конусов'' и выглядит как ломаная.
+
+\subsection{Характеристика интервала и точка следующего измерения}
+Рассмотрим два соседних узла \(x_i < x_{i+1}\) и значения \(f_i=f(x_i)\), \(f_{i+1}=f(x_{i+1})\).
+На интервале \([x_i,x_{i+1}]\) минимум минорната достигается в точке пересечения двух прямых:
+\[
+x_{\text{new}}=\frac{x_i+x_{i+1}}{2}-\frac{f_{i+1}-f_i}{2L}.
+\]
+Минимальное значение минорната на этом интервале (нижняя оценка на минимум \(f\)) равно
+\[
+R_i=\frac{f_i+f_{i+1}}{2}-\frac{L}{2}(x_{i+1}-x_i).
+\]
+Далее выбирают интервал с \textbf{наиболее перспективной} (наименьшей) нижней оценкой:
+\[
+i^\ast = \arg\min_i R_i,
+\]
+вычисляют \(f(x_{\text{new}})\), добавляют новую точку и повторяют процесс.
+
+\subsection{Итерационная схема}
+Инициализация: задать \([a,b]\), оценку \(L\), начальные узлы \(x_1=a\), \(x_2=b\), вычислить \(f(x_1)\), \(f(x_2)\).
+
+\paragraph{Итерации.}
+Пусть на шаге \(k\) имеется упорядоченный набор узлов \(x_1<\dots<x_m\) и значения \(f(x_j)\).
+
+\begin{enumerate}
+  \item Для каждого интервала \([x_i,x_{i+1}]\) вычислить характеристику
+  \[
+    R_i=\frac{f(x_i)+f(x_{i+1})}{2}-\frac{L}{2}(x_{i+1}-x_i).
+  \]
+
+  \item Найти индекс самого перспективного интервала:
+  \[
+    i^\ast = \arg\min_i R_i.
+  \]
+
+  \item Вычислить новую точку испытания:
+  \[
+    x_{\text{new}}=\frac{x_{i^\ast}+x_{i^\ast+1}}{2}-\frac{f(x_{i^\ast+1})-f(x_{i^\ast})}{2L},
+  \]
+  и ограничить её интервалом \([x_{i^\ast},x_{i^\ast+1}]\).
+
+  \item Вычислить \(f(x_{\text{new}})\), добавить точку \(x_{\text{new}}\) в набор узлов (с сохранением сортировки).
+\end{enumerate}
+
+\paragraph{Критерии остановки.}
+Итерации прекращают при выполнении хотя бы одного из условий:
+\begin{itemize}
+  \item \(\bigl|f^{(k)}_{\min}-f^{(k-1)}_{\min}\bigr|<\varepsilon\), где \(f^{(k)}_{\min}=\min_j f(x_j)\) на итерации \(k\);
+  \item \(\bigl|x^{(k)}_{\min}-x^{(k-1)}_{\min}\bigr|<\delta\), где \(x^{(k)}_{\min}=\arg\min_j f(x_j)\) на итерации \(k\).
+\end{itemize}
+
+
+
+\subsection{Сходимость (интуитивно)}
+Если \(L\) не занижен (то есть \(L\ge L_{\text{true}}\)), то минорнат \(g(x)\) корректен,
+а последовательность уточнений сужает ``подозрительные'' интервалы.
+При росте числа узлов метод стремится к глобальному минимуму (при стандартных предположениях).
+
+\section{Классические одномерные методы (для унимодальных функций)}
+
+Далее применяются три метода, которые гарантируют корректность при \textbf{унимодальности}
+функции на \([a,b]\) (имеется единственный минимум и нет других локальных минимумов).
+
+\subsection{Дихотомия}
+На каждом шаге берутся точки
+\[
+x_1 = m-\delta,\quad x_2=m+\delta,\quad m=\frac{a+b}{2},
+\]
+и по сравнению \(f(x_1)\) и \(f(x_2)\) отбрасывается половина интервала.
+Остановка при \(b-a\le \varepsilon\).
+
+\subsection{Золотое сечение}
+Используется свойство самоподобия разбиений при коэффициенте
+\[
+\varphi = \frac{\sqrt{5}-1}{2}.
+\]
+Сохраняется одна из ранее вычисленных точек, поэтому после старта требуется по 1 новому вычислению \(f\) за итерацию.
+
+\subsection{Поиск Фибоначчи}
+Число шагов заранее определяется через числа Фибоначчи \(F_n\), выбираемые так, чтобы
+\[
+F_n \gtrsim \frac{b-a}{\varepsilon}.
+\]
+Метод минимизирует число вычислений \(f\) при фиксированной точности и унимодальности.
+
+\section{Формирование результатов}
+
+Для каждого входного файла:
+\begin{itemize}
+  \item строится интерполяция \(\tilde f\);
+  \item оценивается \(L\);
+  \item выполняется \(N\) итераций метода ломаных, сохраняются точки \((x,f(x))\);
+  \item выполняются дихотомия, золотое сечение и Фибоначчи на той же \(\tilde f\);
+  \item сохраняются текстовый отчёт и сводная таблица.
+\end{itemize}
+
+Отдельно строятся графики:
+\begin{itemize}
+  \item \(\tilde f(x)\) на равномерной сетке;
+  \item минорнат \(g(x)=\max_i(f(x_i)-L|x-x_i|)\) для текущего множества узлов метода ломаных.
+\end{itemize}
+
+\section{Графики (out/plots/)}
+
+Ниже приведены графики, автоматически сохранённые скриптом в каталог \texttt{out/plots/}.
+На каждом изображении показаны интерполированная функция \(f(x)\) и нижняя оценка \(g(x; x_i)=\max_i(f(x_i)-L|x-x_i|)\) для текущего набора узлов метода ломаных.
+
+\subsection{angle-func}
+\begin{figure}[H]
+  \centering
+  \begin{subfigure}{0.32\textwidth}
+    \centering
+    \includegraphics[width=\linewidth]{angle-func_iter1.png}
+    \caption{Итерация 1}
+  \end{subfigure}
+  \begin{subfigure}{0.32\textwidth}
+    \centering
+    \includegraphics[width=\linewidth]{angle-func_iter5.png}
+    \caption{Итерация 5}
+  \end{subfigure}
+  \begin{subfigure}{0.32\textwidth}
+    \centering
+    \includegraphics[width=\linewidth]{angle-func_iter10.png}
+    \caption{Итерация 10}
+  \end{subfigure}
+
+  \begin{subfigure}{0.49\textwidth}
+    \centering
+    \includegraphics[width=\linewidth]{angle-func_iter20.png}
+    \caption{Итерация 20}
+  \end{subfigure}
+  \begin{subfigure}{0.49\textwidth}
+    \centering
+    \includegraphics[width=\linewidth]{angle-func_iter25.png}
+    \caption{Итерация 25}
+  \end{subfigure}
+
+  \caption{Эволюция ломаной (Пиявского--Шуберта) для \texttt{angle-func}.}
+\end{figure}
+
+\subsection{angular-velocity-function}
+\begin{figure}[H]
+  \centering
+  \begin{subfigure}{0.32\textwidth}
+    \centering
+    \includegraphics[width=\linewidth]{angular-velocity-function_iter1.png}
+    \caption{Итерация 1}
+  \end{subfigure}
+  \begin{subfigure}{0.32\textwidth}
+    \centering
+    \includegraphics[width=\linewidth]{angular-velocity-function_iter5.png}
+    \caption{Итерация 5}
+  \end{subfigure}
+  \begin{subfigure}{0.32\textwidth}
+    \centering
+    \includegraphics[width=\linewidth]{angular-velocity-function_iter10.png}
+    \caption{Итерация 10}
+  \end{subfigure}
+
+  \begin{subfigure}{0.49\textwidth}
+    \centering
+    \includegraphics[width=\linewidth]{angular-velocity-function_iter20.png}
+    \caption{Итерация 20}
+  \end{subfigure}
+  \begin{subfigure}{0.49\textwidth}
+    \centering
+    \includegraphics[width=\linewidth]{angular-velocity-function_iter25.png}
+    \caption{Итерация 25}
+  \end{subfigure}
+
+  \caption{Эволюция ломаной (Пиявского--Шуберта) для \texttt{angular-velocity-function}.}
+\end{figure}
+
+\subsection{distance\_txt}
+\begin{figure}[H]
+  \centering
+  \begin{subfigure}{0.32\textwidth}
+    \centering
+    \includegraphics[width=\linewidth]{distance_txt_iter1.png}
+    \caption{Итерация 1}
+  \end{subfigure}
+  \begin{subfigure}{0.32\textwidth}
+    \centering
+    \includegraphics[width=\linewidth]{distance_txt_iter5.png}
+    \caption{Итерация 5}
+  \end{subfigure}
+  \begin{subfigure}{0.32\textwidth}
+    \centering
+    \includegraphics[width=\linewidth]{distance_txt_iter10.png}
+    \caption{Итерация 10}
+  \end{subfigure}
+
+  \begin{subfigure}{0.49\textwidth}
+    \centering
+    \includegraphics[width=\linewidth]{distance_txt_iter20.png}
+    \caption{Итерация 20}
+  \end{subfigure}
+  \begin{subfigure}{0.49\textwidth}
+    \centering
+    \includegraphics[width=\linewidth]{distance_txt_iter25.png}
+    \caption{Итерация 25}
+  \end{subfigure}
+
+  \caption{Эволюция ломаной (Пиявского--Шуберта) для \texttt{distance\_txt}.}
+\end{figure}
+
+\subsection{distatnce\_csv (да, с опечаткой в имени файла)}
+\begin{figure}[H]
+  \centering
+  \begin{subfigure}{0.32\textwidth}
+    \centering
+    \includegraphics[width=\linewidth]{distatnce_csv_iter1.png}
+    \caption{Итерация 1}
+  \end{subfigure}
+  \begin{subfigure}{0.32\textwidth}
+    \centering
+    \includegraphics[width=\linewidth]{distatnce_csv_iter5.png}
+    \caption{Итерация 5}
+  \end{subfigure}
+  \begin{subfigure}{0.32\textwidth}
+    \centering
+    \includegraphics[width=\linewidth]{distatnce_csv_iter10.png}
+    \caption{Итерация 10}
+  \end{subfigure}
+
+  \begin{subfigure}{0.49\textwidth}
+    \centering
+    \includegraphics[width=\linewidth]{distatnce_csv_iter20.png}
+    \caption{Итерация 20}
+  \end{subfigure}
+  \begin{subfigure}{0.49\textwidth}
+    \centering
+    \includegraphics[width=\linewidth]{distatnce_csv_iter25.png}
+    \caption{Итерация 25}
+  \end{subfigure}
+
+  \caption{Эволюция ломаной (Пиявского--Шуберта) для \texttt{distatnce\_csv}.}
+\end{figure}
+
+\subsection{satellite-facility-dist}
+\begin{figure}[H]
+  \centering
+  \begin{subfigure}{0.32\textwidth}
+    \centering
+    \includegraphics[width=\linewidth]{satellite-facility-dist_iter1.png}
+    \caption{Итерация 1}
+  \end{subfigure}
+  \begin{subfigure}{0.32\textwidth}
+    \centering
+    \includegraphics[width=\linewidth]{satellite-facility-dist_iter5.png}
+    \caption{Итерация 5}
+  \end{subfigure}
+  \begin{subfigure}{0.32\textwidth}
+    \centering
+    \includegraphics[width=\linewidth]{satellite-facility-dist_iter10.png}
+    \caption{Итерация 10}
+  \end{subfigure}
+
+  \begin{subfigure}{0.49\textwidth}
+    \centering
+    \includegraphics[width=\linewidth]{satellite-facility-dist_iter20.png}
+    \caption{Итерация 20}
+  \end{subfigure}
+  \begin{subfigure}{0.49\textwidth}
+    \centering
+    \includegraphics[width=\linewidth]{satellite-facility-dist_iter25.png}
+    \caption{Итерация 25}
+  \end{subfigure}
+
+  \caption{Эволюция ломаной (Пиявского--Шуберта) для \texttt{satellite-facility-dist}.}
+\end{figure}
+
+\section{Критические замечания по реализации}
+
+\subsection{Выбор интервала в методе ломаных}
+По теории для минимизации нужно выбирать интервал с \textbf{минимальным} \(R_i\):
+\[
+i^\ast=\arg\min_i R_i
+\]
+Если выбрать \(\arg\max_i R_i\), то алгоритм систематически уточняет интервалы,
+где нижняя оценка \emph{хуже} (выше), что противоречит логике глобального поиска минимума.
+
+\subsection{Значение \(L\)}
+Если \(L\) занижен, минорнат \(g(x)\) перестаёт быть нижней оценкой функции,
+и гарантии глобальности теряются. Практически это лечится выбором \(r>1\) и/или увеличением \(r\) при подозрительных данных.
+
+\subsection{Унимодальные методы}
+Дихотомия/золотое сечение/Фибоначчи корректны и эффективны только при унимодальности.
+На многомодальных функциях они находят локальный минимум, зависящий от формы \(\tilde f\).
+
+\section{Вывод}
+Описанный алгоритм объединяет:
+\begin{itemize}
+  \item корректную работу с табличными данными и построение \(\tilde f\) (линейная интерполяция);
+  \item оценку липшицевой константы;
+  \item глобальный метод Пиявского--Шуберта, способный искать глобальный минимум при корректном \(L\);
+  \item унимодальные методы как быстрые локальные альтернативы/бенчмарки.
+\end{itemize}
+
+\end{document}

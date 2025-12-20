@@ -3,7 +3,7 @@
 Читает таблицы из текущей директории, строит линейную интерполяцию, выполняет поиск минимума и сохраняет результаты в `out/` (графики в `out/plots/`).
 Соответствует базовым правилам PEP 257 для docstring.
 """
-import re, io, math
+import re, math
 from pathlib import Path
 import numpy as np
 import pandas as pd
